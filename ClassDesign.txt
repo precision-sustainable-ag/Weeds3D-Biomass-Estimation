@@ -1,0 +1,41 @@
+
+
+## Steps:
+
+# 1. Import video
+
+# 2. Identify all frames with red balls on white sticks
+
+# 3. Identify the center frame for each red ball
+
+# 4a. Shorter output: return x number of frames before and after red ball
+
+# 4b. Approximate elevation angle of camera from diameter of each red ball
+
+# 5. Calculate average path trajectory for each red ball
+
+# 6. Project average path trajectory for each red ball down to ground level
+
+# 7. Approximate ground region of biomass sampling
+
+# 8. Longer output: determine which frames should be passed to Structure-from-Motion for each red ball
+
+
+## Data:
+# What data do I need over the entire process?
+# Video:
+#   - video filepath
+#   - frames
+#   - red ball center frames
+#
+# Frame:
+#   - image
+#   - frame number
+#   - elevation angle estimate
+#   - Red balls
+#       - center
+#           - x
+#           - y
+#       - radius
+#       - gravity vector 2d
+#   - biomass region prediction
