@@ -1,7 +1,9 @@
+from point import Point
+
 class BallOnPost:
-    center: (int, int)
+    center: Point
     radius: int
 
-    def __init__(self, center, radius):
+    def __init__(self, center: Point, radius: int):
         self.center = center
         self.radius = radius
