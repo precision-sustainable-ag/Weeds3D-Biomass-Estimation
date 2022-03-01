@@ -34,3 +34,11 @@ __pycache__/
 data/Red_balls - Copy/
 
 data/Red_balls_labeled/
+
+data/all/train_subset/
+
+data/Red_balls_yolo/images/Red_balls/
+
+data/Red_balls_yolo/labels/Red_balls/
+
+data/two-test.txt

@@ -59,3 +59,4 @@ def are_two_circles_overlapped(c1: Circle, c2: Circle, iou_cutoff: float):
     union_area = c1.get_area() + c2.get_area() - 2*intersection_area
     iou = intersection_area/union_area
     return True if iou > iou_cutoff else False
+

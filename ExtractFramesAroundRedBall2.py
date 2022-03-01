@@ -1,13 +1,22 @@
 from video import Video
 from circle import Circle
 from point import Point
+from frame import Frame
+from ball_on_post import RedBall
 import circle
+import os
+import glob
+from math import ceil
+import utils
+import numpy as np
 
 
 # Testing video
 print("Hello World")
-vid = Video(path_to_folder=".\\data\\Red_balls", filename=None)
-vid.load_frames_from_file(load_meta=True)
-vid.find_red_balls_in_video()
-vid.evaluate_red_ball_predictions(saveImages=True)
+folderpath = '.\\data\\Calib-test'
+file = None
+vid = Video(folderpath, file)
+vid.load_frames_from_file(load_meta=True, meta_file_type='txt')
+print(vid.list_of_frames_with_red_ball())
+vid.find_red_ball_ids(vid.red_ball_elevation_method)
 

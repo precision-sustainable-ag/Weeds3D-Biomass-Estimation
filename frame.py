@@ -4,6 +4,7 @@ from math import sqrt
 import utils
 import circle
 from circle import Circle
+from ball_on_post import RedBall
 from point import Point
 from evaluation import Evaluation
 import color_thresholding as ct
@@ -13,14 +14,12 @@ class Frame:
     image: np.array
     markers_pred: list
     markers_true: list
-    elevation_angle: int
     MIN_BALL_SIZE: int
 
     def __init__(self, image):
         self.image = image
         self.markers_pred = []
         self.markers_true = []
-        self.elevation_angle = None
         self.MIN_BALL_SIZE = 25
 
     def get_np_shape(self):
@@ -28,6 +27,12 @@ class Frame:
 
     def get_xy_shape(self):
         return np.shape(self.image)[1], np.shape(self.image)[0]
+
+    def get_height(self):
+        return np.shape(self.image)[0]
+
+    def has_red_ball(self):
+        return True if len(self.markers_pred) > 0 else False
 
     def convert_to_contour(self, points):
         length = len(points)
@@ -37,12 +42,27 @@ class Frame:
         return np.round(cnt).astype('int')
 
     def extract_red_ball_from_meta(self, meta):
-        for shape in meta["shapes"]:
-            if shape["label"] == "redball":
-                cnt = self.convert_to_contour(shape["points"])
-                ball = circle.min_enclosing_circle(cnt)
-                if ball.radius >= self.MIN_BALL_SIZE:
-                    self.markers_true.append(ball)
+        # json contours
+        if "shapes" in meta.keys():
+            for shape in meta["shapes"]:
+                if shape["label"] == "redball":
+                    cnt = self.convert_to_contour(shape["points"])
+                    ball = circle.min_enclosing_circle(cnt)
+                    if ball.radius >= self.MIN_BALL_SIZE:
+                        self.markers_true.append(RedBall(ball, self.get_height()))
+                        self.markers_true.sort()
+        # txt yolo bbox
+        if "BBox" in meta.keys():
+            width, height = self.get_xy_shape()
+            for bbox in meta["BBox"]:
+                x = round(bbox[0]*width, 0)
+                y = round(bbox[1]*height, 0)
+                center = Point(x, y)
+                radius = round(bbox[2]*width/2.0, 0)
+                ball = Circle(center, radius)
+                self.markers_pred.append(RedBall(ball, self.get_height()))
+                self.markers_pred.sort()
+
 
     def extract_meta(self, meta):
         self.extract_red_ball_from_meta(meta)
@@ -92,7 +112,7 @@ class Frame:
                     break
 
             if not duplicate:
-                cleaned_post_pred.append(post_pred[i])
+                cleaned_post_pred.append(RedBall(post_pred[i], self.get_height()))
         return cleaned_post_pred
 
 
@@ -109,6 +129,7 @@ class Frame:
         post_hypotheses = self.find_white_posts_in_image()
         post_pred = self.connectBallAndPost(post_hypotheses, ball_hypotheses)
         self.markers_pred = self.remove_duplication_predictions(post_pred)
+        self.markers_pred.sort()
 
     # Assume that there is no case of two trues fighting for one pred
     def evaluate_red_ball_predictions(self, saveImages=False):
@@ -116,19 +137,19 @@ class Frame:
         matches_p = np.zeros([len(self.markers_pred)])
         for t in range(len(self.markers_true)):
             for p in range(len(self.markers_pred)):
-                if circle.are_two_circles_overlapped(self.markers_true[t], self.markers_pred[p], iou_cutoff=0.5):
+                if circle.are_two_circles_overlapped(self.markers_true[t].ball, self.markers_pred[p].ball, iou_cutoff=0.5):
                     matches_t[t] += 1
                     matches_p[p] += 1
                     if saveImages:
-                        cv2.circle(self.image, self.markers_pred[p].get_center(), self.markers_pred[p].radius, [0,255,0], 5)
+                        cv2.circle(self.image, self.markers_pred[p].ball.get_center(), self.markers_pred[p].ball.radius, [0,255,0], 5)
 
         if saveImages:
             for p in range(len(self.markers_pred)):
                 if matches_p[p] == 1:
-                    cv2.circle(self.image, self.markers_pred[p].get_center(), self.markers_pred[p].radius, [0, 255, 0],
+                    cv2.circle(self.image, self.markers_pred[p].ball.get_center(), self.markers_pred[p].ball.radius, [0, 255, 0],
                                5)
                 else:
-                    cv2.circle(self.image, self.markers_pred[p].get_center(), self.markers_pred[p].radius, [0, 0, 255],
+                    cv2.circle(self.image, self.markers_pred[p].ball.get_center(), self.markers_pred[p].ball.radius, [0, 0, 255],
                                5)
 
         TP = np.sum(matches_t >= 1)
