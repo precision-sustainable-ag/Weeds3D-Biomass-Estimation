@@ -2,7 +2,7 @@ from video import Video
 from circle import Circle
 from point import Point
 from frame import Frame
-from ball_on_post import RedBall
+from redball import RedBall
 import circle
 import os
 import glob

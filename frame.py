@@ -4,7 +4,7 @@ from math import sqrt
 import utils
 import circle
 from circle import Circle
-from ball_on_post import RedBall
+from redball import RedBall
 from point import Point
 from evaluation import Evaluation
 import color_thresholding as ct

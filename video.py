@@ -5,8 +5,6 @@ import cv2
 import os
 import utils
 import glob
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
 
 class Video:
     filename: str
