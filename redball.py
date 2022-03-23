@@ -1,5 +1,6 @@
 from circle import Circle
 import numpy as np
+import point
 
 class RedBall:
     ball: Circle
@@ -30,4 +31,13 @@ class RedBall:
 
     def __ge__(self, other):
         return self.elevation >= other.elevation
+
+def interpolate_red_ball(rb1: RedBall, rb2: RedBall):
+    new_center = point.midpoint_between_points(rb1.ball.center, rb2.ball.center)
+    new_radius = int((rb1.ball.radius+rb2.ball.radius)/2)
+    new_elevation = (rb1.elevation + rb2.elevation)/2
+    new_ball = RedBall(Circle(new_center, new_radius))
+    new_ball.ball_id = rb1.ball_id
+    new_ball.elevation = new_elevation
+    return new_ball
 

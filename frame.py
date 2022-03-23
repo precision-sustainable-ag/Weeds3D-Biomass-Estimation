@@ -34,6 +34,15 @@ class Frame:
     def has_red_ball(self):
         return True if len(self.markers_pred) > 0 else False
 
+    def has_red_ball_with_id(self, ball_id):
+        for red_ball in self.markers_pred:
+            if red_ball.ball_id == ball_id:
+                return True
+        return False
+
+    def isABallInBottomHalf(self):
+        return True if self.markers_pred[0].elevation < 0 else False
+
     def convert_to_contour(self, points):
         length = len(points)
         cnt = np.zeros([length, 1, 2])
@@ -158,5 +167,11 @@ class Frame:
         print("TP: "+str(TP)+", FP: " + str(FP)+", FN: " + str(FN))
         return Evaluation(TP, FP, FN)
 
+    def get_redball_elevation(self, ball_id: int):
+        red_ball_match = None
+        for red_ball in self.markers_pred:
+            if red_ball.ball_id == ball_id:
+                red_ball_match = red_ball.elevation
+        return red_ball_match
 
 

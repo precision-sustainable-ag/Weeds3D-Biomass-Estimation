@@ -2,7 +2,7 @@ import os
 import json
 import shutil
 import cv2
-from math import sqrt
+from math import sqrt, exp
 from point import Point
 import point
 import numpy as np
@@ -46,3 +46,9 @@ def find_largest_gaps(points:list, num_clusters:int):
         gaps[i] = points[i+1]-points[i]  # Calculate gaps
     sort_index = np.argsort(gaps)  # Identify num_clusters-1 largest gaps
     return np.sort(sort_index[-num_clusters:])
+
+def parabola_func(x, a, b, c):
+    return a*x*x + b*x + c
+
+def exponential_func(x, m, t, b):
+    return -m*np.exp(t*x)+b
