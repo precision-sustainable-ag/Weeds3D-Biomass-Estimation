@@ -1,5 +1,31 @@
-from point import Point
+from point import Point, Point3D
 import numpy as np
+from scipy.spatial.transform import Rotation as R
+
+class Line3D:
+    point3D: Point3D
+    vector3D: Point3D
+
+    def __init__(self, point3D, vector3D):
+        self.point3D = Point3D(point3D)
+        self.vector3D = Point3D(vector3D)
+
+    def rotate(self, rotvec):
+        r = R.from_rotvec(rotvec)
+        point = self.point3D.get_np()
+        vec = self.vector3D.get_np()
+        self.point3D.set_np(r.apply(point))
+        self.vector3D.set_np(r.apply(vec))
+
+    def translate(self, translate_vector):
+        self.point3D.add_np(translate_vector)
+
+    def scale(self, scale_factor):
+        self.point3D.scale(scale_factor)
+
+    def get_xyz(self):
+        return self.point3D.x, self.point3D.y, self.point3D.z
+
 
 class Line:
     m: float

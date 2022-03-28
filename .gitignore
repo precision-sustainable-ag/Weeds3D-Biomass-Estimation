@@ -44,3 +44,5 @@ data/Red_balls_yolo/labels/Red_balls/
 data/two-test.txt
 
 *.ply
+
+*.npz

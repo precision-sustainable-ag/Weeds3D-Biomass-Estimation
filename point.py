@@ -1,4 +1,33 @@
 from math import sqrt
+import numpy as np
+
+class Point3D:
+    x: float
+    y: float
+    z: float
+
+    def __init__(self, point3d):
+        self.x = point3d[0]
+        self.y = point3d[1]
+        self.z = point3d[2]
+
+    def get_np(self):
+        return np.array([self.x, self.y, self.z])
+
+    def set_np(self, vec):
+        self.x = vec[0]
+        self.y = vec[1]
+        self.z = vec[2]
+
+    def add_np(self, add_vector):
+        self.x += add_vector[0]
+        self.y += add_vector[1]
+        self.z += add_vector[2]
+
+    def scale(self, scale_factor):
+        self.x *= scale_factor
+        self.y *= scale_factor
+        self.z *= scale_factor
 
 class Point:
     x: int
