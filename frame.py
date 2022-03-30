@@ -41,6 +41,8 @@ class Frame:
         return False
 
     def isABallInBottomHalf(self):
+        if len(self.markers_pred) == 0:
+            return False
         return True if self.markers_pred[0].elevation < 0 else False
 
     def convert_to_contour(self, points):

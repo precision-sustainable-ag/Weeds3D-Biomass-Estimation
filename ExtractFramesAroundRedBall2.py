@@ -13,7 +13,7 @@ import numpy as np
 
 # Testing video
 print("Hello World")
-folderpath = '.\\data\\DE-C5D-3-CALIB-FINAL READING-GX010113'
+folderpath = '.\\data\\TX-COTTON1-1-CALIB-COTTON1-GX010031'
 file = None
 vid = Video(folderpath, file)
 vid.load_frames_from_file(load_meta=True, meta_file_type='txt')

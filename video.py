@@ -234,6 +234,8 @@ class Video:
         frame_id_above_0 = None
         for i in range(len(self.frames)):
             frame = self.frames[i]
+            if frame.has_red_ball_with_id(ball_id):
+                print(frame.markers_pred[0].elevation)
             if frame.has_red_ball_with_id(ball_id) and frame.markers_pred[0].elevation > 0 and frame.markers_pred[0].elevation <= max_elevation:
                 frame_id_above_0 = i
         return frame_id_above_0
@@ -270,7 +272,7 @@ class Video:
         width_avg = 0
         centers = []
         for ball_id in range(3):
-            frame_id_above_0 = self.find_frame_just_above_0_elevation(ball_id, max_elevation=0.2)
+            frame_id_above_0 = self.find_frame_just_above_0_elevation(ball_id, max_elevation=0.3)
             if frame_id_above_0 is None:
                 print("need to extrapolate")
                 center_frame_id, center_width = self.extrapolate_to_0_elevation(ball_id)

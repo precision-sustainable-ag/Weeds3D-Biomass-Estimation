@@ -51,6 +51,6 @@ class Line:
 def fit_line(x_list: list, y_list: list):
     x = np.array(x_list)
     y = np.array(y_list)
-    m, b = np.polyfit(x, y, 1)
-    line = Line(m=m, b=b)
+    m, c = np.polyfit(x, y, 1)
+    line = Line(m=m, c=c)
     return line
