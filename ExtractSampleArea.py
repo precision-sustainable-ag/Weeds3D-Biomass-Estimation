@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 ESTIMATED_ELEV_DEG = 45
 
 
-pcloud = PointCloud(".\\data\\Point_Clouds\\pmvs_options1.txt.ply")  # load point cloud
+pcloud = PointCloud(".\\data\\Point_Clouds\\GX010075-pmvs_options1.txt.ply")  # load point cloud
 pcloud.rotate(radians(ESTIMATED_ELEV_DEG) * np.array([1, 0, 0]))  # Rotate to approximately flat
 pcloud.translate_to_z_gt_0()
 pcloud.scale_to_z_equals_1()
@@ -19,7 +19,8 @@ pcloud.move_post_vertical()
 pcloud.center_origin_point()
 sample_points = pcloud.vertical_cutout_of_points(xmin=-0.381, xmax=0.381, ymin=-0.656, ymax=0.656)
 #pcloud.rotate(np.array([np.pi/2, 0, 0]))  # Rotate 90 degrees
-
+print(np.shape(sample_points))
+print(np.shape(pcloud.get_points()))
 pcloud.show_o3d(sample_points)
 #pcloud.show_np(sample_points)
 

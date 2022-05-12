@@ -1,9 +1,5 @@
-import numpy as np
-
-data = np.load(".\\data\\GP51451840-CALIB-01-GX010001.npz")
-for k in data.keys():
-    print(k)
-
-print(data['focalLength'])
-print(data['distCoeff'])
-print(data['intrinsic_matrix'])
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+img = mpimg.imread('.\\data\\DE-C4D-1S-CALIB-FIELD14SOY2ND-GX010075\\0170-color.jpg')
+imgplot = plt.imshow(img)
+plt.show()

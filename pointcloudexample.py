@@ -43,7 +43,7 @@ def find_pole_vector(points, pcnt):
     plt.show()
 
 
-pcd_load = o3d.io.read_point_cloud(".\\data\\Point_Clouds\\pmvs_options1.txt.ply", format='ply')
+pcd_load = o3d.io.read_point_cloud(".\\data\\Point_Clouds\\GX010075-pmvs_options1.txt.ply", format='ply')
 xyz_load = np.asarray(pcd_load.points)
 
 r = R.from_rotvec(np.pi/4 * np.array([1, 0, 0]))
@@ -66,5 +66,5 @@ print(max_h)
 print(min_h)
 find_pole_vector(scaled_xyz, 0.75)
 pcd_load.points = o3d.utility.Vector3dVector(xyz2)
-#o3d.visualization.draw_geometries([pcd_load])
-#custom_draw_geometry(xyz_load)
+o3d.visualization.draw_geometries([pcd_load])
+custom_draw_geometry(xyz_load)
