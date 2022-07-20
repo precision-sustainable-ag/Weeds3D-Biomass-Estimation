@@ -5,14 +5,43 @@ from skimage.measure import LineModelND, ransac
 from line import Line3D
 import matplotlib.pyplot as plt
 from math import asin
+from SurfaceReconstruction import SurfaceReconstruction, PoissonSurfaceReconstruction
+import open3d.visualization.rendering as rendering
+
+
+class Camera:
+    translation: np.array
+    rotation: R
+    extrinsic: o3d.camera.PinholeCameraParameters.extrinsic
+    intrinsic: o3d.camera.PinholeCameraParameters.intrinsic
+    PinholeCameraParameters: o3d.camera.PinholeCameraParameters
+
+    def __init__(self, translation, rotation):
+        self.translation = translation
+        self.rotation = rotation
+        extrinsic_np = np.zeros([4,4])
+        extrinsic_np[0:3,0:3] = rotation.as_matrix()
+        extrinsic_np[0:3,3] = translation
+        extrinsic_np[3,3] = 1
+        self.extrinsic = extrinsic_np
+        self.intrinsic = o3d.camera.PinholeCameraIntrinsic(width=1920, height=1080, fx=997.5123, fy=999.109885, cx=953.45, cy=543.51542)
+        self.PinholeCameraParameters = o3d.camera.PinholeCameraParameters()
+        self.PinholeCameraParameters.intrinsic = self.intrinsic
+        self.PinholeCameraParameters.extrinsic = self.extrinsic
 
 class PointCloud:
     data: o3d.geometry.PointCloud
     points_backup: o3d.geometry.PointCloud.points
     white_post: Line3D
+    cameras: list
+    surface_reconstruction_method: SurfaceReconstruction
+    mesh: o3d.geometry.TriangleMesh
 
-    def __init__(self, filepath=None):
+    def __init__(self, filepath=None, surface_reconstruction_method: SurfaceReconstruction = PoissonSurfaceReconstruction):
         self.white_post = None
+        self.cameras = []
+        self.surface_reconstruction_method = surface_reconstruction_method()
+        self.mesh = None
         if filepath is None:
             self.data = None
             self.points_backup = None
@@ -32,47 +61,91 @@ class PointCloud:
     def reset_points(self):
         self.set_points(self.points_backup)
 
+    def get_cam_locations(self):
+        num_cams = len(self.cameras)
+        points = np.zeros([num_cams, 3])
+        for i in range(num_cams):
+            points[i, :] = self.cameras[i].translation
+        return points
+
+    def set_cam_locations(self, cam_pos):
+        num_cams = len(self.cameras)
+        for i in range(num_cams):
+            self.cameras[i].translation = cam_pos[i, :]
+
     def rotate(self, rotvec):
         r = R.from_rotvec(rotvec)
         xyz = self.get_points()
         xyz2 = r.apply(xyz)
         self.set_points(xyz2)
+        cam_xyz = self.get_cam_locations()
+        self.set_cam_locations(r.apply(cam_xyz))
         if self.white_post is not None:
             self.white_post.rotate(rotvec)
 
     def translate(self, translate_vector):
         xyz = self.get_points()
+        cam_xyz = self.get_cam_locations()
         xyz2 = xyz + translate_vector
+        cam_xyz2 = cam_xyz + translate_vector
         self.set_points(xyz2)
+        self.set_cam_locations(cam_xyz2)
         if self.white_post is not None:
             self.white_post.translate(translate_vector)
 
     def scale(self, scale_factor):
         xyz = self.get_points()
+        cam_xyz = self.get_cam_locations()
         xyz2 = xyz*scale_factor
+        cam_xyz2 = cam_xyz*scale_factor
         self.set_points(xyz2)
+        self.set_cam_locations(cam_xyz2)
         if self.white_post is not None:
             self.white_post.scale(scale_factor)
 
     def translate_to_z_gt_0(self):
         xyz = self.get_points()
+        cam_xyz = self.get_cam_locations()
         min_h = np.min(xyz[:, 2])
         xyz[:, 2] -= min_h
+        cam_xyz[:, 2] -= min_h
         self.set_points(xyz)
+        self.set_cam_locations(cam_xyz)
         if self.white_post is not None:
             self.white_post.translate(-1*min_h)
 
     def scale_to_z_equals_1(self):
         xyz = self.get_points()
+        cam_xyz = self.get_cam_locations()
         max_h = np.max(xyz[:, 2])
         min_h = np.min(xyz[:, 2])
         h_diff = max_h - min_h
         xyz2 = xyz / h_diff
+        cam_xyz2 = cam_xyz / h_diff
         self.set_points(xyz2)
+        self.set_cam_locations(cam_xyz2)
 
-    def show_o3d(self, sample_points=None):
+    def show_o3d(self, sample_points=None, cam_pos=None):
+        #vis = o3d.visualization.Visualizer()
+        #vis.create_window(visible=False)
+        #vis.add_geometry(self.mesh)
+        #vis.update_geometry(self.mesh)
+        #vis.poll_events()
+        #vis.update_renderer()
+        #cam = vis.get_view_control()
+        #cam.rotate(10.0, 0)
+        #vis.capture_screen_image('test.png')
+        #vis.destroy_window()
+
         if sample_points is None:
-            o3d.visualization.draw_geometries([self.data])
+            if cam_pos is None:
+                o3d.visualization.draw_geometries([self.data])
+            else:
+                o3d.visualization.draw_geometries([self.data],
+                                                  zoom=0.3,
+                                                  front=[0, -1, 0],
+                                                  lookat=[0, 0, 0],
+                                                  up=[0, 0, 1])
         else:
             colors = np.asarray(self.data.colors)
             points = self.get_points()
@@ -81,7 +154,34 @@ class PointCloud:
             sampled_pcloud.points = o3d.utility.Vector3dVector(points[sample_points])
             o3d.visualization.draw_geometries([sampled_pcloud])
 
-    def show_np(self, sample_points=None):
+    def crop_mesh(self, bbox):
+        pcd = o3d.geometry.PointCloud()
+        # Bounding Box points from numpy to Open3D
+        pcd.points = o3d.utility.Vector3dVector(bbox)
+
+        # Create Bounding Box
+        boundingbox = o3d.geometry.AxisAlignedBoundingBox.create_from_points(pcd.points)
+
+        # Crop mesh
+        self.mesh = self.mesh.crop(boundingbox)
+
+
+    def show_mesh(self):
+        vis = o3d.visualization.Visualizer()
+        vis.create_window()
+        vis.add_geometry(self.mesh)
+        ctr = vis.get_view_control()
+        print(ctr.convert_to_pinhole_camera_parameters().intrinsic)
+        ctr.convert_from_pinhole_camera_parameters(self.cameras[0].PinholeCameraParameters)
+
+        #vis.run()
+        #o3d.visualization.draw_geometries([self.mesh],
+        #                                  zoom=1,
+        #                                  front=[0, -1, 0],
+        #                                  lookat=[0, 0, 0],
+        #                                  up=[0, 0, 1])
+
+    def show_np(self, sample_points=None, show_cameras=False):
         xyz = self.get_points()
         pole_x = xyz[:, 0]
         pole_y = xyz[:, 1]
@@ -89,6 +189,10 @@ class PointCloud:
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
         ax.scatter(pole_x, pole_y, pole_z, c=pole_z) if sample_points is None else ax.scatter(pole_x[sample_points], pole_y[sample_points], pole_z[sample_points], c=pole_z[sample_points])
+        if show_cameras:
+            cam_points = self.get_cam_locations()
+            ax.scatter(cam_points[:, 0], cam_points[:, 1], cam_points[:, 2])
+
         ax.set_xlabel('X Label')
         ax.set_ylabel('Y Label')
         ax.set_zlabel('Z Label')
@@ -107,7 +211,6 @@ class PointCloud:
         model_robust, inliers = ransac(shorter_array.transpose(), LineModelND, min_samples=50, residual_threshold=0.05,
                                        max_trials=1000)
         self.white_post = Line3D(model_robust.params[0], model_robust.params[1])
-        print(model_robust.params[1])
 
     def vertical_cutout_of_points(self, xmin, xmax, ymin, ymax):
         xyz = self.get_points()
@@ -120,6 +223,23 @@ class PointCloud:
         xyz_xy_range = np.bitwise_and(xyz_x_range, xyz_y_range)
         return xyz_xy_range
 
+    def vertical_cutout_of_mesh(self, xmin, xmax, ymin, ymax, zmin=-10, zmax=10):
+        pcd = o3d.geometry.PointCloud()
+        boundingBox = np.array([[xmin, ymin, zmin],
+                               [xmin, ymin, zmax],
+                               [xmin, ymax, zmin],
+                               [xmin, ymax, zmax],
+                               [xmax, ymin, zmin],
+                               [xmax, ymin, zmax],
+                               [xmax, ymax, zmin],
+                               [xmax, ymax, zmax]])
+        # Bounding Box points from numpy to Open3D
+        pcd.points =o3d.utility.Vector3dVector(boundingBox)
+
+        # Create Bounding Box
+        return o3d.geometry.AxisAlignedBoundingBox.create_from_points(pcd.points)
+
+
     def move_post_vertical(self):
         post_vector = self.white_post.vector3D
         self.rotate(np.array([post_vector.y, -1*post_vector.x, 0]))
@@ -130,15 +250,38 @@ class PointCloud:
         max_h = np.max(xyz[xyz_xy_range, 2])
         min_h = np.min(xyz[xyz_xy_range, 2])
         diff_h = max_h-min_h
-        print(max_h)
-        print(min_h)
         self.translate(np.array([0, 0, -1*min_h]))
         self.scale(1/diff_h)
         xyz = self.get_points()
         pole_z = xyz[:, 2]
-        print(np.max(pole_z))
-        print(np.min(pole_z))
 
     def center_origin_point(self):
         post_x, post_y, post_z = self.white_post.get_xyz()
         self.translate(np.array([-1*post_x, -1*post_y, 0]))
+
+    def extract_cameras(self, filepath):
+        file = open(filepath, 'r')
+        Lines = file.readlines()
+        num_cameras = int(Lines[1].split()[0])
+        for i in range(2, num_cameras*5+2, 5):
+            line1 = Lines[i+1].split()
+            line2 = Lines[i+2].split()
+            line3 = Lines[i+3].split()
+            line4 = Lines[i+4].split()
+            rot_np = np.array([[float(line1[0]), float(line1[1]), float(line1[2])],[float(line2[0]), float(line2[1]), float(line2[2])],[float(line3[0]), float(line3[1]), float(line3[2])]])
+            rot = R.from_matrix(rot_np)
+            trans = np.array([float(line4[0]), float(line4[1]), float(line4[2])])
+            self.cameras.append(Camera(trans, rot))
+
+    def move_camera(self, rotation,translation):
+        pass
+
+    def move_to_camera_position(self, position):
+        camera = self.cameras[position]
+        rot = camera.rotation
+        trans = camera.translation
+        self.move_camera(rot, trans)
+
+    def surface_reconstruction(self):
+        self.mesh = self.surface_reconstruction_method.reconstruct_surface(pcd=self.data)
+
