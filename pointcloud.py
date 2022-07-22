@@ -58,6 +58,9 @@ class PointCloud:
     def set_points(self, xyz):
         self.data.points = o3d.utility.Vector3dVector(xyz)
 
+    def set_colors(self, rgb):
+        self.data.colors = o3d.utility.Vector3dVector(rgb)
+
     def reset_points(self):
         self.set_points(self.points_backup)
 
