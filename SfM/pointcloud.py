@@ -1,11 +1,14 @@
+# Standard Libraries
 import open3d as o3d
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from skimage.measure import LineModelND, ransac
-from line import Line3D
 import matplotlib.pyplot as plt
 from SurfaceReconstruction import SurfaceReconstruction, PoissonSurfaceReconstruction
+
+# Custom Libraries
 from camera import Camera
+from line import Line3D
 
 class PointCloud:
     data: o3d.geometry.PointCloud
