@@ -3,10 +3,10 @@ import numpy as np
 from math import radians
 
 # Custom Libraries
-from pointcloud import PointCloud
+from SfM.pointcloud import PointCloud
 
 # Config file
-import config
+import SfM.config as config
 
 
 pcloud = PointCloud("./data/Point_Clouds/GX010075-pmvs_options1.txt.ply")  # load point cloud
