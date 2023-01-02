@@ -1,6 +1,6 @@
 from math import acos, sqrt, pi
-from point import Point
-import point
+from shared.point import Point
+from shared import point
 import cv2
 
 class Circle:

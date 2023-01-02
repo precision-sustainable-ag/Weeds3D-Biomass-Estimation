@@ -1,10 +1,8 @@
 import os
 import json
 import shutil
-import cv2
-from math import sqrt, exp
-from point import Point
-import point
+from shared.point import Point
+from shared import point
 import numpy as np
 
 def check_file_exists_bool(filepath):

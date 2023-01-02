@@ -8,7 +8,7 @@ from SurfaceReconstruction import SurfaceReconstruction, PoissonSurfaceReconstru
 
 # Custom Libraries
 from camera import Camera
-from line import Line3D
+from shared.line import Line3D
 
 class PointCloud:
     data: o3d.geometry.PointCloud

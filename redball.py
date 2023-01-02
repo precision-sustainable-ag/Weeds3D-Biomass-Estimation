@@ -1,6 +1,6 @@
 from circle import Circle
-import numpy as np
-import point
+from shared import point
+
 
 class RedBall:
     ball: Circle

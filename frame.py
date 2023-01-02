@@ -1,11 +1,10 @@
 import numpy as np
 import cv2
-from math import sqrt
 import utils
 import circle
 from circle import Circle
 from redball import RedBall
-from point import Point
+from shared.point import Point
 from evaluation import Evaluation
 import color_thresholding as ct
 

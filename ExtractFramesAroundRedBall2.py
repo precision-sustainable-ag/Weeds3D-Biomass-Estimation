@@ -1,15 +1,4 @@
 from video import Video
-from circle import Circle
-from point import Point
-from frame import Frame
-from redball import RedBall
-import circle
-import os
-import glob
-from math import ceil
-import utils
-import numpy as np
-
 
 # Testing video
 print("Hello World")

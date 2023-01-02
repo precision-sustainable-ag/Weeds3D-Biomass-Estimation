@@ -9,9 +9,9 @@ import glob
 from flipflop import FlipFlipCount
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-from line import Line
-import line
-from point import Point
+from shared.line import Line
+from shared import line
+from shared.point import Point
 
 class Video:
     filename: str

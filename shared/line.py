@@ -1,4 +1,4 @@
-from point import Point, Point3D
+from shared.point import Point, Point3D
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
