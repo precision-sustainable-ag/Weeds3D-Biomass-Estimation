@@ -1,17 +1,13 @@
-import open3d as o3d
 import numpy as np
 from math import radians
-from scipy.spatial.transform import Rotation as R
-from pointcloud import PointCloud, Camera
-from skimage.measure import LineModelND, ransac
-import matplotlib.pyplot as plt
+from pointcloud import PointCloud
 
 
 ESTIMATED_ELEV_DEG = 45
 
 
-pcloud = PointCloud(".\\data\\Point_Clouds\\GX010075-pmvs_options1.txt.ply")  # load point cloud
-pcloud.extract_cameras(".\\data\\GX010075-1-bundle.out") # load camera data
+pcloud = PointCloud("./data/Point_Clouds/GX010075-pmvs_options1.txt.ply")  # load point cloud
+pcloud.extract_cameras("./data/GX010075-1-bundle.out") # load camera data
 pcloud.rotate(radians(ESTIMATED_ELEV_DEG) * np.array([1, 0, 0]))  # Rotate to approximately flat
 pcloud.translate_to_z_gt_0()
 pcloud.scale_to_z_equals_1()
