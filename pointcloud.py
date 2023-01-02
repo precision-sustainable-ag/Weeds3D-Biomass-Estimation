@@ -10,22 +10,28 @@ import open3d.visualization.rendering as rendering
 
 
 class Camera:
-    translation: np.array
-    #extrinsic: o3d.camera.PinholeCameraParameters.extrinsic
-    intrinsic: o3d.camera.PinholeCameraParameters.intrinsic
     PinholeCameraParameters: o3d.camera.PinholeCameraParameters
 
-    def __init__(self, translation):
-        self.translation = translation
-        #extrinsic_np = np.zeros([4,4])
-        #extrinsic_np[0:3,0:3] = rotation.as_matrix()
-        #extrinsic_np[0:3,3] = translation
-        #extrinsic_np[3,3] = 1
-        #self.extrinsic = extrinsic_np
-        self.intrinsic = o3d.camera.PinholeCameraIntrinsic(width=1920, height=1080, fx=997.5123, fy=999.109885, cx=953.45, cy=543.51542)
+    def __init__(self, translation, rotation):
+        extrinsic_np = np.zeros([4,4])
+        extrinsic_np[0:3,0:3] = rotation.as_matrix()
+        extrinsic_np[0:3,3] = translation
+        extrinsic_np[3,3] = 1
+        extrinsic = extrinsic_np
+        intrinsic = o3d.camera.PinholeCameraIntrinsic(width=1920, height=1080, fx=997.5123, fy=999.109885, cx=953.45, cy=543.51542)
         self.PinholeCameraParameters = o3d.camera.PinholeCameraParameters()
-        self.PinholeCameraParameters.intrinsic = self.intrinsic
-        #self.PinholeCameraParameters.extrinsic = self.extrinsic
+        self.PinholeCameraParameters.intrinsic = intrinsic
+        self.PinholeCameraParameters.extrinsic = extrinsic
+
+    def get_translation(self):
+        extrinsic = self.PinholeCameraParameters.extrinsic
+        return np.asarray(extrinsic[0:3,3])
+
+    def translate_to(self, location):
+        extrinsic = np.asarray(self.PinholeCameraParameters.extrinsic).copy()
+        extrinsic[0:3,3] = location
+        self.PinholeCameraParameters.extrinsic = extrinsic
+
 
 class PointCloud:
     data: o3d.geometry.PointCloud
@@ -66,13 +72,14 @@ class PointCloud:
         num_cams = len(self.cameras)
         points = np.zeros([num_cams, 3])
         for i in range(num_cams):
-            points[i, :] = self.cameras[i].translation.reshape(1,3)
+            points[i, :] = self.cameras[i].get_translation()
         return points
 
     def set_cam_locations(self, cam_pos):
         num_cams = len(self.cameras)
         for i in range(num_cams):
-            self.cameras[i].translation = cam_pos[i, :]
+            #self.cameras[i].translation = cam_pos[i, :]
+            self.cameras[i].translate_to(cam_pos[i, :])
 
     def rotate(self, rotvec):
         r = R.from_rotvec(rotvec)
@@ -272,10 +279,8 @@ class PointCloud:
             rot_np = np.array([[float(line1[0]), float(line1[1]), float(line1[2])],[float(line2[0]), float(line2[1]), float(line2[2])],[float(line3[0]), float(line3[1]), float(line3[2])]])
             rot = R.from_matrix(rot_np)
             trans = np.array([float(line4[0]), float(line4[1]), float(line4[2])])
-            rot_inv = rot.inv()
-            t = trans.reshape((3, 1))
-            points = np.matmul(-1 * rot_inv.as_matrix(), t)
-            self.cameras.append(Camera(points))
+            xyz = -1 * rot.as_matrix().T @ trans.T
+            self.cameras.append(Camera(xyz, rot))
 
     def move_camera(self, rotation,translation):
         pass
