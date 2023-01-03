@@ -4,11 +4,12 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 from skimage.measure import LineModelND, ransac
 import matplotlib.pyplot as plt
-from SurfaceReconstruction import SurfaceReconstruction, PoissonSurfaceReconstruction
+
 
 # Custom Libraries
 from SfM.camera import Camera
 from shared.line import Line3D
+from SurfaceReconstruction import SurfaceReconstruction, PoissonSurfaceReconstruction
 
 class PointCloud:
     data: o3d.geometry.PointCloud
