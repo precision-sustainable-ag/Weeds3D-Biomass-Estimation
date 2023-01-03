@@ -70,3 +70,7 @@ data/upload/
 data/
 
 test.png
+
+.idea/
+
+__pycache__/
