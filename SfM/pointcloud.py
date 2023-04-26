@@ -125,7 +125,16 @@ class PointCloud:
 
         if sample_points is None:
             if cam_pos is None:
-                o3d.visualization.draw_geometries([self.data])
+                vis = o3d.visualization.Visualizer()
+                vis.create_window(width=1920, height=1080)
+                vis.add_geometry(self.data)
+                ctr = vis.get_view_control()
+                camera1 = Camera(translation=np.array([0, 0, 1]), rotation=R.from_euler('zyx', [0, 0, 90],
+                                                                                        degrees=True))
+                ctr.convert_from_pinhole_camera_parameters(camera1.PinholeCameraParameters, allow_arbitrary=True)
+                cam_pos_check = ctr.convert_to_pinhole_camera_parameters()
+                vis.run()
+
             else:
                 o3d.visualization.draw_geometries([self.data],
                                                   zoom=0.3,
@@ -138,7 +147,14 @@ class PointCloud:
             sampled_pcloud = o3d.geometry.PointCloud()
             sampled_pcloud.colors = o3d.utility.Vector3dVector(colors[sample_points])
             sampled_pcloud.points = o3d.utility.Vector3dVector(points[sample_points])
-            o3d.visualization.draw_geometries([sampled_pcloud])
+            vis = o3d.visualization.Visualizer()
+            vis.create_window(width=1920, height=1080)
+            vis.add_geometry(sampled_pcloud)
+            ctr = vis.get_view_control()
+            camera1 = Camera(translation=np.array([0, 0, 1]), rotation=R.from_euler('zyx', [0, 0, 90],
+                                                                                       degrees=True))
+            ctr.convert_from_pinhole_camera_parameters(camera1.PinholeCameraParameters, allow_arbitrary=True)
+            vis.run()
 
     def crop_mesh(self, bbox):
         pcd = o3d.geometry.PointCloud()
@@ -157,17 +173,16 @@ class PointCloud:
         vis.create_window()
         vis.add_geometry(self.mesh)
         ctr = vis.get_view_control()
-        print(ctr.convert_to_pinhole_camera_parameters().intrinsic)
-        ctr.convert_from_pinhole_camera_parameters(self.cameras[0].PinholeCameraParameters)
+        #ctr.convert_from_pinhole_camera_parameters(self.cameras[0].PinholeCameraParameters, allow_arbitrary=True)
 
-        #vis.run()
-        #o3d.visualization.draw_geometries([self.mesh],
-        #                                  zoom=1,
-        #                                  front=[0, -1, 0],
-        #                                  lookat=[0, 0, 0],
-        #                                  up=[0, 0, 1])
+        vis.run()
+        o3d.visualization.draw_geometries([self.mesh],
+                                          zoom=1,
+                                          front=[0, -1, 0],
+                                          lookat=[0, 0, 0],
+                                          up=[0, 0, 1])
 
-    def show_np(self, sample_points=None, show_cameras=False):
+    def show_np(self, sample_points=None, show_cameras=False, show_post_line=False):
         xyz = self.get_points()
         pole_x = xyz[:, 0]
         pole_y = xyz[:, 1]
@@ -178,6 +193,12 @@ class PointCloud:
         if show_cameras:
             cam_points = self.get_cam_locations()
             ax.scatter(cam_points[:, 0], cam_points[:, 1], cam_points[:, 2])
+
+        if show_post_line:
+            xpoints = np.array([self.white_post.point3D.x, self.white_post.point3D.x+self.white_post.vector3D.x])
+            ypoints = np.array([self.white_post.point3D.y, self.white_post.point3D.y + self.white_post.vector3D.y])
+            zpoints = np.array([self.white_post.point3D.z, self.white_post.point3D.z + self.white_post.vector3D.z])
+            ax.plot3D(xpoints, ypoints, zpoints, 'black')
 
         ax.set_xlabel('X Label')
         ax.set_ylabel('Y Label')
@@ -228,8 +249,15 @@ class PointCloud:
 
     def move_post_vertical(self):
         post_vector = self.white_post.vector3D
+        post_point = self.white_post.point3D
+        print("vector=["+str(post_vector.x)+","+str(post_vector.y)+","+str(post_vector.z)+"]")
+        print("point=[" + str(post_point.x) + "," + str(post_point.y) + "," + str(post_point.z) + "]")
         self.rotate(np.array([post_vector.y, -1*post_vector.x, 0]))
         post_x, post_y, post_z = self.white_post.get_xyz()
+        post_vector = self.white_post.vector3D
+        post_point = self.white_post.point3D
+        print("vector=[" + str(post_vector.x) + "," + str(post_vector.y) + "," + str(post_vector.z) + "]")
+        print("point=[" + str(post_point.x) + "," + str(post_point.y) + "," + str(post_point.z) + "]")
         cutout_size = 0.1
         xyz_xy_range = self.vertical_cutout_of_points(post_x-cutout_size, post_x+cutout_size, post_y-cutout_size, post_y+cutout_size)
         xyz = self.get_points()

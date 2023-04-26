@@ -9,6 +9,10 @@ class Line3D:
     def __init__(self, point3D, vector3D):
         self.point3D = Point3D(point3D)
         self.vector3D = Point3D(vector3D)
+        if self.vector3D.z < 0:
+            self.vector3D.x *= -1
+            self.vector3D.y *= -1
+            self.vector3D.z *= -1
 
     def rotate(self, rotvec):
         r = R.from_rotvec(rotvec)
