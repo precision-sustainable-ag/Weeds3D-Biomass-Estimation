@@ -6,10 +6,10 @@ class Line3D:
     point3D: Point3D
     vector3D: Point3D
 
-    def __init__(self, point3D, vector3D):
+    def __init__(self, point3D, vector3D, isPositive=False):
         self.point3D = Point3D(point3D)
         self.vector3D = Point3D(vector3D)
-        if self.vector3D.z < 0:
+        if (self.vector3D.z < 0 and isPositive):
             self.vector3D.x *= -1
             self.vector3D.y *= -1
             self.vector3D.z *= -1
@@ -29,6 +29,9 @@ class Line3D:
 
     def get_xyz(self):
         return self.point3D.x, self.point3D.y, self.point3D.z
+
+    def get_vec(self):
+        return self.vector3D.x, self.vector3D.y, self.vector3D.z
 
 
 class Line:

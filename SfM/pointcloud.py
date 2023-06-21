@@ -50,14 +50,26 @@ class PointCloud:
         num_cams = len(self.cameras)
         points = np.zeros([num_cams, 3])
         for i in range(num_cams):
-            points[i, :] = self.cameras[i].get_translation()
+            points[i, :] = self.cameras[i].get_position()
         return points
+
+    def get_cam_viewing_lines(self) -> list:
+        num_cams = len(self.cameras)
+        lines = []
+        for i in range(num_cams):
+            lines.append(self.cameras[i].get_viewing_line())
+        return lines
 
     def set_cam_locations(self, cam_pos):
         num_cams = len(self.cameras)
         for i in range(num_cams):
             #self.cameras[i].translation = cam_pos[i, :]
             self.cameras[i].translate_to(cam_pos[i, :])
+
+    def set_cam_rotations(self, cam_rot):
+        num_cams = len(self.cameras)
+        for i in range(num_cams):
+            self.cameras[i].rotate_cameras(cam_rot)
 
     def rotate(self, rotvec):
         r = R.from_rotvec(rotvec)
@@ -66,6 +78,8 @@ class PointCloud:
         self.set_points(xyz2)
         cam_xyz = self.get_cam_locations()
         self.set_cam_locations(r.apply(cam_xyz))
+        r_inv = r.inv()
+        self.set_cam_rotations(r_inv.as_matrix())
         if self.white_post is not None:
             self.white_post.rotate(rotvec)
 
@@ -112,35 +126,40 @@ class PointCloud:
         self.set_cam_locations(cam_xyz2)
 
     def show_o3d(self, sample_points=None, cam_pos=None):
-        #vis = o3d.visualization.Visualizer()
-        #vis.create_window(visible=False)
-        #vis.add_geometry(self.mesh)
-        #vis.update_geometry(self.mesh)
-        #vis.poll_events()
-        #vis.update_renderer()
-        #cam = vis.get_view_control()
-        #cam.rotate(10.0, 0)
-        #vis.capture_screen_image('test.png')
-        #vis.destroy_window()
-
         if sample_points is None:
             if cam_pos is None:
                 vis = o3d.visualization.Visualizer()
                 vis.create_window(width=1920, height=1080)
                 vis.add_geometry(self.data)
                 ctr = vis.get_view_control()
-                camera1 = Camera(translation=np.array([0, 0, 1]), rotation=R.from_euler('zyx', [0, 0, 90],
+                camera1 = Camera(translation=np.array([0, 0, 0]), rotation=R.from_euler('zyx', [0, 0, 90],
                                                                                         degrees=True))
                 ctr.convert_from_pinhole_camera_parameters(camera1.PinholeCameraParameters, allow_arbitrary=True)
-                cam_pos_check = ctr.convert_to_pinhole_camera_parameters()
                 vis.run()
 
             else:
-                o3d.visualization.draw_geometries([self.data],
-                                                  zoom=0.3,
-                                                  front=[0, -1, 0],
-                                                  lookat=[0, 0, 0],
-                                                  up=[0, 0, 1])
+                #Rot = R.from_euler('zyx', [np.radians(-0.02335), np.radians(6.8225), np.radians(180-39.59621)])
+                #Rot = R.from_euler('zyx', [np.radians(0), np.radians(0), np.radians(-39.59621)])
+                #Rot = R.from_euler('zyx', [0, 0, np.radians(140)])
+                #self.data.rotate(Rot.as_matrix(), center=(0, 0, 0))
+                #self.data.translate(translation=np.matmul(Rot.as_matrix(), np.array([-0.0607, 1.0531, -1.3717])))
+                #self.data.translate(translation=np.array([-0.0611, -0.3838, 1.6860]))
+                vis = o3d.visualization.Visualizer()
+                vis.create_window(width=1920, height=1080)
+                vis.add_geometry(self.data)
+                ctr = vis.get_view_control()
+                #camera = Camera(translation=self.cameras[cam_pos-1].get_translation(), rotation=R.from_euler('zyx', [0, 0, 90],
+                #                                                                        degrees=True))
+                #camera0 = Camera(translation=np.array([0, 0, 0]), rotation=R.from_euler('zyx', [0, 0, 0], degrees=True))
+                X = np.array([0.0545, 0.3869, -1.3510])  # cam 6: [0.0607, 1.0531, -1.3717]
+                rot = R.from_euler('zyx', [np.radians(2.65489), np.radians(6.57612), np.radians(180-38.64658)])
+                theta_x = np.radians(180-38.64658)
+                rot_x = np.array([[1, 0, 0],[0, np.cos(theta_x), -1*np.sin(theta_x)],[0, np.sin(theta_x), np.cos(theta_x)]])
+                X_dash = np.matmul(rot.as_matrix(), X.transpose())
+                camera1 = Camera(translation=X_dash, rotation=rot)
+                ctr.convert_from_pinhole_camera_parameters(camera1.PinholeCameraParameters, allow_arbitrary=True)
+                vis.run()
+
         else:
             colors = np.asarray(self.data.colors)
             points = self.get_points()
@@ -151,7 +170,7 @@ class PointCloud:
             vis.create_window(width=1920, height=1080)
             vis.add_geometry(sampled_pcloud)
             ctr = vis.get_view_control()
-            camera1 = Camera(translation=np.array([0, 0, 1]), rotation=R.from_euler('zyx', [0, 0, 90],
+            camera1 = Camera(translation=np.array([0.062, 1.058, 1.368]), rotation=R.from_euler('zyx', [0, 0, 180],
                                                                                        degrees=True))
             ctr.convert_from_pinhole_camera_parameters(camera1.PinholeCameraParameters, allow_arbitrary=True)
             vis.run()
@@ -173,26 +192,48 @@ class PointCloud:
         vis.create_window()
         vis.add_geometry(self.mesh)
         ctr = vis.get_view_control()
-        #ctr.convert_from_pinhole_camera_parameters(self.cameras[0].PinholeCameraParameters, allow_arbitrary=True)
+        #camera = Camera(translation=np.array([0.062, 1.368, 1.055]),
+        #                rotation=R.from_euler('zyx', [0, 0, 135], degrees=True))
+        camera = Camera(translation=np.array([0, 1, 0]),
+                        rotation=R.from_euler('zyx', [0, 0, 135], degrees=True))
+        ctr.convert_from_pinhole_camera_parameters(camera.PinholeCameraParameters, allow_arbitrary=True)
 
+
+        #o3d.visualization.draw_geometries([self.mesh],
+        #                                  zoom=1,
+        #                                  #front=[0.062, 1.058, 1.368],
+        #                                  front=[0, -1, 0],
+        #                                  lookat=[0, 1, 0],
+        #                                  up=[0, 0, 1])
         vis.run()
-        o3d.visualization.draw_geometries([self.mesh],
-                                          zoom=1,
-                                          front=[0, -1, 0],
-                                          lookat=[0, 0, 0],
-                                          up=[0, 0, 1])
 
-    def show_np(self, sample_points=None, show_cameras=False, show_post_line=False):
+    def show_np(self, sample_points=None, show_cameras=False, show_camera_lines=False, show_post_line=False):
         xyz = self.get_points()
         pole_x = xyz[:, 0]
         pole_y = xyz[:, 1]
         pole_z = xyz[:, 2]
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
+
+        x_diff = np.max(xyz[sample_points, 0]) - np.min(xyz[sample_points, 0])
+        y_diff = np.max(xyz[sample_points, 1]) - np.min(xyz[sample_points, 1])
+        z_diff = np.max(xyz[sample_points, 2]) - np.min(xyz[sample_points, 2])
+        x2z_ratio = x_diff / z_diff
+        y2z_ratio = y_diff / z_diff
+
         ax.scatter(pole_x, pole_y, pole_z, c=pole_z) if sample_points is None else ax.scatter(pole_x[sample_points], pole_y[sample_points], pole_z[sample_points], c=pole_z[sample_points])
         if show_cameras:
             cam_points = self.get_cam_locations()
+            #ax.scatter(cam_points[5, 0], cam_points[5, 1], cam_points[5, 2])
             ax.scatter(cam_points[:, 0], cam_points[:, 1], cam_points[:, 2])
+
+        if show_camera_lines:
+            cam_lines = self.get_cam_viewing_lines()
+            for cam_line in cam_lines:
+                xpoints = np.array([cam_line.point3D.x, cam_line.point3D.x + 0.3*cam_line.vector3D.x])
+                ypoints = np.array([cam_line.point3D.y, cam_line.point3D.y + 0.3*cam_line.vector3D.y])
+                zpoints = np.array([cam_line.point3D.z, cam_line.point3D.z + 0.3*cam_line.vector3D.z])
+                ax.plot3D(xpoints, ypoints, zpoints)
 
         if show_post_line:
             xpoints = np.array([self.white_post.point3D.x, self.white_post.point3D.x+self.white_post.vector3D.x])
@@ -203,6 +244,7 @@ class PointCloud:
         ax.set_xlabel('X Label')
         ax.set_ylabel('Y Label')
         ax.set_zlabel('Z Label')
+        #ax.set_box_aspect([x2z_ratio, y2z_ratio, 1])
         plt.show()
 
     def find_post(self, min_h, max_h):
@@ -217,7 +259,7 @@ class PointCloud:
         shorter_array = np.array([pole_x[pole_points], pole_y[pole_points], pole_z[pole_points]])
         model_robust, inliers = ransac(shorter_array.transpose(), LineModelND, min_samples=50, residual_threshold=0.05,
                                        max_trials=1000)
-        self.white_post = Line3D(model_robust.params[0], model_robust.params[1])
+        self.white_post = Line3D(model_robust.params[0], model_robust.params[1], isPositive=True)
 
     def vertical_cutout_of_points(self, xmin, xmax, ymin, ymax):
         xyz = self.get_points()
@@ -250,14 +292,10 @@ class PointCloud:
     def move_post_vertical(self):
         post_vector = self.white_post.vector3D
         post_point = self.white_post.point3D
-        print("vector=["+str(post_vector.x)+","+str(post_vector.y)+","+str(post_vector.z)+"]")
-        print("point=[" + str(post_point.x) + "," + str(post_point.y) + "," + str(post_point.z) + "]")
         self.rotate(np.array([post_vector.y, -1*post_vector.x, 0]))
         post_x, post_y, post_z = self.white_post.get_xyz()
         post_vector = self.white_post.vector3D
         post_point = self.white_post.point3D
-        print("vector=[" + str(post_vector.x) + "," + str(post_vector.y) + "," + str(post_vector.z) + "]")
-        print("point=[" + str(post_point.x) + "," + str(post_point.y) + "," + str(post_point.z) + "]")
         cutout_size = 0.1
         xyz_xy_range = self.vertical_cutout_of_points(post_x-cutout_size, post_x+cutout_size, post_y-cutout_size, post_y+cutout_size)
         xyz = self.get_points()
@@ -299,4 +337,20 @@ class PointCloud:
 
     def surface_reconstruction(self):
         self.mesh = self.surface_reconstruction_method.reconstruct_surface(pcd=self.data)
+
+    def lens_distort_point_cloud(self, cam_num: int) -> None:
+        xyz = self.get_points()
+        camera = self.cameras[cam_num]
+        camera_line = camera.get_viewing_line()
+        print(camera_line.get_xyz())
+        print(camera_line.get_vec())
+        # 1. For each point, convert p_w into p_c_3d
+        #for i in range(np.shape(xyz)[0]):
+        #    p = xyz[i, :]
+
+        # 2. calculate f_scaled r_u
+
+        # 3. Convert r_u to r_d
+
+        # 4. project distorted p_c_2d into p_c_3d
 
