@@ -19,7 +19,7 @@ class TestPointCloud(TestCase):
                                                                                            radii=o3d.utility.DoubleVector(
                                                                                                [0.8]))
         vis = o3d.visualization.Visualizer()
-        vis.create_window(width=1920, height=1080)
+        vis.create_window(width=3840, height=2160)
         vis.add_geometry(self.pcloud.mesh)
         ctr = vis.get_view_control()
         ctr.convert_from_pinhole_camera_parameters(camera.PinholeCameraParameters, allow_arbitrary=True)
