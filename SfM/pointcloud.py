@@ -40,6 +40,9 @@ class PointCloud:
     def set_points(self, xyz):
         self.data.points = o3d.utility.Vector3dVector(xyz)
 
+    def get_num_points(self):
+        return np.shape(self.get_points())[0]
+        
     def set_colors(self, rgb):
         self.data.colors = o3d.utility.Vector3dVector(rgb)
 
