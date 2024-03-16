@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 # Custom Libraries
 from SfM.camera import Camera
 from shared.line import Line3D
-from SurfaceReconstruction import SurfaceReconstruction, PoissonSurfaceReconstruction
+from shared.SurfaceReconstruction import SurfaceReconstruction, PoissonSurfaceReconstruction
 
 class PointCloud:
     data: o3d.geometry.PointCloud

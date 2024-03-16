@@ -8,8 +8,8 @@ from SfM.pointcloud import PointCloud
 # Config file
 import SfM.config as config
 
-pcloud = PointCloud("./data/Point_Clouds/GX010075-pmvs_options1.txt.ply")  # load point cloud
-pcloud.extract_cameras("./data/GX010075-1-bundle.out") # load camera data
+pcloud = PointCloud("../data/Point_Clouds/GX010075-pmvs_options1.txt.ply")  # load point cloud
+pcloud.extract_cameras("../data/GX010075-1-bundle.out") # load camera data
 print("Cam 16 euler: \n"+str(pcloud.cameras[15].as_euler('zyx', degrees=True)))
 print("Cam 16 location: \n"+str(pcloud.cameras[15].get_translation()))
 pcloud.rotate(radians(config.ESTIMATED_ELEV_DEG) * np.array([1, 0, 0]))  # Rotate to approximately flat
